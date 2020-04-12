@@ -1,5 +1,4 @@
 def timed(func):
-    """Dekorator drukujący infromację o czasie egzekucji funkcji"""
     from time import time
 
     def modified_func(*args, **kwargs):

@@ -45,5 +45,3 @@ def bfs_internal(nodes):
             to_check.append(el)
     if len(to_check) > 0:
         yield from bfs_internal(to_check)
-
-
