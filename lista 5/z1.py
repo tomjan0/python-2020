@@ -1,39 +1,63 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
-# movies = pd.read_csv("./ml-latest-small/movies.csv")
-ratings = pd.read_csv("./ml-latest-small/ratings.csv.")
-toy_story_ratings = ratings[ratings["movieId"] == 1]
+
+def gen_x(m, filtered_ratings, ratings):
+    res = []
+    for user_id in filtered_ratings.userId:
+        user_ratings = ratings.loc[
+            (ratings.userId == user_id) & (ratings.movieId > 1) & (
+                    ratings.movieId <= m),
+            ["movieId", "rating"]].to_numpy()
+        sorted_user_ratings = np.zeros(m)
+        for movieId, rating in user_ratings:
+            sorted_user_ratings[int(movieId) - 2] = rating
+        res.append(sorted_user_ratings)
+    return np.array(res)
 
 
-def generateXY(m: int):
-    y = [[rating] for rating in toy_story_ratings["rating"]]
-    # y = [[row["rating"]] for _, row in toy_story_ratings.iterrows()]
+def gen_y(filtered_ratings):
+    return [[rating] for rating in filtered_ratings["rating"]]
 
-    x = []
-    for user_id in toy_story_ratings.userId:
-        user_ratings = ratings[ratings.userId == user_id]
-        x_i = []
-        for j in range(2, m + 2):
-            j_rating = user_ratings[user_ratings.movieId == j]
-            x_i.append(float(j_rating.rating) if not j_rating.empty else 0)
-        x.append(x_i)
 
-    return np.array(x), np.array(y)
+def plot_differences(data, real_values, plot):
+    model = LinearRegression().fit(data, real_values)
+    predicted = plot.scatter(np.arange(215), model.predict(data), alpha=0.75)
+    real = plot.scatter(np.arange(215), real_values, alpha=0.75, c="y")
+    plot.legend((predicted, real), ("Predicted", "Real"))
+    plot.set_title(
+        f"m = ${len(data[0])}, Score = ${model.score(data, real_values)}")
 
-for size in [500,1000]:
-    print('Size: ', size)
-    x2, y2 = generateXY(size)
-    x_sliced = x2[0:200]
-    y_sliced = y2[0:200]
-    model = LinearRegression().fit(x_sliced, y_sliced)
-    print('\tModel score against training set', model.score(x_sliced, y_sliced))
-    print('\tModel score against test set', model.score(x2[200:215], y2[200:215]))
-    print('\tModel score against all data', model.score(x2, y2))
 
-    predictions = model.predict(x2[200:215])
-    print('\tPredicting last 15')
-    for i in range(15):
-        print('\t\tPrediction: ', predictions[i], ' Real: ', y2[200 + i])
+def predict_last_15(data, real_values):
+    model = LinearRegression().fit(data[:-15], real_values[:-15])
+    predictions = model.predict(data[-15:])
+    print("Last 15 predictions for m = ", len(data[0]), " (Score: ",
+          model.score(data[:-15], real_values[:-15]), ")",
+          sep="")
+    for j in range(15):
+        print("\tPredicted: ", predictions[j], " Real: ", real_values[200 + j])
+    print()
 
+
+def main():
+    ratings = pd.read_csv("./ml-latest-small/ratings.csv")
+    filtered_ratings = ratings[ratings["movieId"] == 1]
+    xs = [gen_x(m, filtered_ratings, ratings) for m in
+          [10, 100, 200, 500, 1000, 10000]]
+    xs_2 = [xs[0], xs[4], xs[5]]
+    y = gen_y(filtered_ratings)
+
+    fig, plots = plt.subplots(1, 3)
+    for i in range(3):
+        plot_differences(xs_2[i], y, plots[i])
+    plt.show()
+
+    for x in xs:
+        predict_last_15(x, y)
+
+
+if __name__ == "__main__":
+    main()
