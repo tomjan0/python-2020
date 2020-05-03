@@ -1,9 +1,6 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression, LogisticRegression
-from typing import List
-from pprint import pprint
+from sklearn.linear_model import LinearRegression
 
 # movies = pd.read_csv("./ml-latest-small/movies.csv")
 ratings = pd.read_csv("./ml-latest-small/ratings.csv.")
@@ -25,17 +22,18 @@ def generateXY(m: int):
 
     return np.array(x), np.array(y)
 
+for size in [500,1000]:
+    print('Size: ', size)
+    x2, y2 = generateXY(size)
+    x_sliced = x2[0:200]
+    y_sliced = y2[0:200]
+    model = LinearRegression().fit(x_sliced, y_sliced)
+    print('\tModel score against training set', model.score(x_sliced, y_sliced))
+    print('\tModel score against test set', model.score(x2[200:215], y2[200:215]))
+    print('\tModel score against all data', model.score(x2, y2))
 
-x2, y2 = generateXY(1000)
-x_sliced = x2[0:200]
-y_sliced = y2[0:200]
-model = LinearRegression().fit(x_sliced, y_sliced)
-print('Model score against training set', model.score(x_sliced, y_sliced))
-print('Model score against test set', model.score(x2[200:215], y2[200:215]))
-print('Model score against all data', model.score(x2, y2))
-
-predictions = model.predict(x2[200:215])
-print('Predicting last 15')
-for i in range(15):
-    print('\tPrediction: ', predictions[i], ' Real: ', y2[200 + i])
+    predictions = model.predict(x2[200:215])
+    print('\tPredicting last 15')
+    for i in range(15):
+        print('\t\tPrediction: ', predictions[i], ' Real: ', y2[200 + i])
 
